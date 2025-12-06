@@ -1,29 +1,24 @@
-steps:
-  # Step 1: Run bootstrap.sh to create project + link billing
-  - name: 'gcr.io/cloud-builders/bash'
-    args: ['./acct-setup.sh', 'my-new-project', '01C775-E9F7A1-985BD2']
-
-  # Step 2: Enable core APIs (Compute, IAM, GKE, BigQuery, Pub/Sub)
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['services', 'enable',
-           'compute.googleapis.com',
-           'iam.googleapis.com',
-           'container.googleapis.com',
-           'bigquery.googleapis.com',
-           'pubsub.googleapis.com']
-
-  # Step 3: Create IAM roles for developers (example: viewer + storage admin)
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['projects', 'add-iam-policy-binding', 'my-new-project',
-           '--member=user:dustycloudeng@gmail.com',
-           '--role=roles/viewer']
-
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['projects', 'add-iam-policy-binding', 'my-new-project',
-           '--member=user:dustycloudeng@gmail.com',
-           '--role=roles/storage.admin']
-
+# Minimal Cloud Build config to run acct-setup.sh
 options:
   logging: CLOUD_LOGGING_ONLY
 
-timeout: "1200s"   # 20 minutes max build time
+substitutions:
+  _PROJECT_ID: ""
+  _BILLING_ACCOUNT: ""
+
+steps:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - -c
+      - |
+        echo "Inputs: PROJECT_ID=${_PROJECT_ID} BILLING_ACCOUNT=${_BILLING_ACCOUNT}"
+        if [[ -z "${_PROJECT_ID}" || -z "${_BILLING_ACCOUNT}" ]]; then
+          echo "ERROR: _PROJECT_ID and _BILLING_ACCOUNT required" >&2
+          exit 1
+        fi
+
+  - name: 'gcr.io/cloud-builders/bash'
+    args: ['./acct-setup.sh', '${_PROJECT_ID}', '${_BILLING_ACCOUNT}']
+
+timeout: "1200s"

@@ -1,53 +1,26 @@
 #!/usr/bin/env bash
-# Usage: ./bootstrap.sh <PROJECT_ID> <BILLING_ACCOUNT_ID>
-# Example: ./bootstrap.sh james-demo-123 012345-ABCDEF-789012
+# Minimal idempotent bootstrap script
+# Usage: ./bootstrap.sh PROJECT_ID BILLING_ACCOUNT_ID
 set -euo pipefail
 
-PROJECT_ID="${1:-}"
-BILLING_ACCOUNT="${2:-}"
+PROJECT_ID="${1:?PROJECT_ID required}"
+BILLING_ACCOUNT="${2:?BILLING_ACCOUNT required}"
 
-# -------- helpers --------
-err() { echo "ERROR: $*" >&2; }
-info() { echo "INFO: $*"; }
-
-# -------- validate inputs --------
-if [[ -z "${PROJECT_ID}" || -z "${BILLING_ACCOUNT}" ]]; then
-  err "PROJECT_ID and BILLING_ACCOUNT are required."
-  exit 1
-fi
-
-# -------- check auth context --------
-# Cloud Build SA must have resourcemanager.projectCreator and billing.user.
-gcloud auth list || true
-
-# -------- check if project already exists --------
+echo "INFO: creating or verifying project ${PROJECT_ID}"
 if gcloud projects describe "${PROJECT_ID}" >/dev/null 2>&1; then
-  info "Project ${PROJECT_ID} already exists. Skipping creation."
+  echo "INFO: project exists, skipping create"
 else
-  info "Creating project: ${PROJECT_ID}"
-  gcloud projects create "${PROJECT_ID}"
+  gcloud projects create "${PROJECT_ID}" --set-as-default
 fi
 
-# -------- set default project --------
-gcloud config set project "${PROJECT_ID}"
-
-# -------- verify billing account visibility --------
-if ! gcloud beta billing accounts list --filter="name:${BILLING_ACCOUNT}" --format="value(name)" | grep -qx "${BILLING_ACCOUNT}"; then
-  err "Billing account ${BILLING_ACCOUNT} not found or not visible to current identity."
-  err "Ensure Cloud Build SA has roles/billing.user and the billing account is in same org."
-  exit 1
-fi
-
-# -------- link billing (idempotent) --------
-if gcloud beta billing projects describe "${PROJECT_ID}" --format="value(billingAccountName)" | grep -q "${BILLING_ACCOUNT}"; then
-  info "Project ${PROJECT_ID} already linked to billing ${BILLING_ACCOUNT}."
+echo "INFO: linking billing account ${BILLING_ACCOUNT}"
+if gcloud beta billing projects describe "${PROJECT_ID}" --format="value(billingAccountName)" 2>/dev/null | grep -q "${BILLING_ACCOUNT}"; then
+  echo "INFO: billing already linked"
 else
-  info "Linking billing account ${BILLING_ACCOUNT} to project ${PROJECT_ID}."
   gcloud beta billing projects link "${PROJECT_ID}" --billing-account="${BILLING_ACCOUNT}"
 fi
 
-# -------- enable minimal baseline APIs --------
-info "Enabling baseline APIs (iam, serviceusage)."
-gcloud services enable iam.googleapis.com serviceusage.googleapis.com
+echo "INFO: enabling minimal APIs"
+gcloud services enable compute.googleapis.com iam.googleapis.com serviceusage.googleapis.com --project="${PROJECT_ID}"
 
-info "Bootstrap complete for ${PROJECT_ID}."
+echo "DONE: ${PROJECT_ID} ready"

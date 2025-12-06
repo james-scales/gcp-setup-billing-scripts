@@ -18,7 +18,12 @@ steps:
           exit 1
         fi
 
-  - name: 'gcr.io/cloud-builders/bash'
-    args: ['./acct-setup.sh', '${_PROJECT_ID}', '${_BILLING_ACCOUNT}']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - -c
+      - |
+        chmod +x ./bootstrap.sh
+        ./acct-setup.sh "${_PROJECT_ID}" "${_BILLING_ACCOUNT}"
 
 timeout: "1200s"

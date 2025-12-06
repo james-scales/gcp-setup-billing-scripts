@@ -23,7 +23,7 @@ steps:
     args:
       - -c
       - |
-        chmod +x ./bootstrap.sh
+        chmod +x ./acct-setup.sh
         ./acct-setup.sh "${_PROJECT_ID}" "${_BILLING_ACCOUNT}"
 
 timeout: "1200s"

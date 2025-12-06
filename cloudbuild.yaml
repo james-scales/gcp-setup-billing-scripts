@@ -23,8 +23,7 @@ steps:
            '--member=user:dustycloudeng@gmail.com',
            '--role=roles/storage.admin']
 
-  # Step 4: Create a Cloud Storage bucket for logs/backups
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['mb', '-p', 'my-new-project', 'gs://my-new-project-logs/']
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 timeout: "1200s"   # 20 minutes max build time

@@ -1,7 +1,7 @@
 steps:
   # Step 1: Run bootstrap.sh to create project + link billing
   - name: 'gcr.io/cloud-builders/bash'
-    args: ['./bootstrap.sh', 'my-new-project', '012345-ABCDEF-789012']
+    args: ['./acct-setup.sh', 'my-new-project', '01C775-E9F7A1-985BD2']
 
   # Step 2: Enable core APIs (Compute, IAM, GKE, BigQuery, Pub/Sub)
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -15,12 +15,12 @@ steps:
   # Step 3: Create IAM roles for developers (example: viewer + storage admin)
   - name: 'gcr.io/cloud-builders/gcloud'
     args: ['projects', 'add-iam-policy-binding', 'my-new-project',
-           '--member=user:developer@example.com',
+           '--member=user:dustycloudeng@gmail.com',
            '--role=roles/viewer']
 
   - name: 'gcr.io/cloud-builders/gcloud'
     args: ['projects', 'add-iam-policy-binding', 'my-new-project',
-           '--member=user:developer@example.com',
+           '--member=user:dustycloudeng@gmail.com',
            '--role=roles/storage.admin']
 
   # Step 4: Create a Cloud Storage bucket for logs/backups
